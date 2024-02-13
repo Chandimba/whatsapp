@@ -1,8 +1,13 @@
 package ao.it.chandsoft.whatsapp.controller.handler;
 
 import ao.it.chandsoft.whatsapp.dto.ExceptionResponse;
+import ao.it.chandsoft.whatsapp.dto.WhatsAppErrorResponse;
 import ao.it.chandsoft.whatsapp.exception.MediaFileException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -57,6 +62,31 @@ public class AppErrorHandler {
         return exceptionResponse;
     }
 
+    @ExceptionHandler(FeignException.FeignClientException.class)
+    ResponseEntity<ExceptionResponse> feignException(FeignException.FeignClientException ex) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        WhatsAppErrorResponse errorResponse = null;
+        String message = null;
+
+        if(!ex.contentUTF8().isBlank()) {
+            errorResponse = objectMapper.readValue(ex.contentUTF8(), WhatsAppErrorResponse.class);
+            message = errorResponse.error().message();
+            /*message = errorResponse.error().errorData().details().isBlank()? errorResponse.error().message():
+                    errorResponse.error().errorData().details();*/
+        }
+
+        ExceptionResponse exceptionResponse =  switch (ex.status()) {
+            case 400  -> exceptionResponse(HttpStatus.BAD_REQUEST, "Bad request", extractMessage(message));
+            //case 400  -> exceptionResponse(HttpStatus.BAD_REQUEST, "Bad request", errorResponse.substring(0, errorResponse.lastIndexOf(". Please")));
+            case 401 -> exceptionResponse(HttpStatus.UNAUTHORIZED, "Authentication failed",  "Invalid WhatsApp credentials");
+            case 403 -> exceptionResponse(HttpStatus.FORBIDDEN, "Denied access", message);
+            default -> exceptionResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error server", message);
+        };
+
+        return ResponseEntity.status(exceptionResponse.getHttpStatus()).body(exceptionResponse);
+    }
 
     private ExceptionResponse exceptionResponse(HttpStatus httpStatus, String error, String message) {
         return ExceptionResponse.builder()
@@ -76,6 +106,18 @@ public class AppErrorHandler {
                     return map;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String extractMessage(String message) {
+        if(message.contains(". Please")) {
+            return message.substring(0, message.lastIndexOf(". Please"));
+        }
+
+        if (message.matches("\\(#\\d+\\) .+")) {
+            return message.substring(message.indexOf(")") + 1).trim();
+        }
+
+        return message;
     }
 
 }
