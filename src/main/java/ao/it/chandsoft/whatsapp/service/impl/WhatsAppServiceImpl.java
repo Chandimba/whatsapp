@@ -1,6 +1,7 @@
 package ao.it.chandsoft.whatsapp.service.impl;
 
 import ao.it.chandsoft.whatsapp.dto.Message;
+import ao.it.chandsoft.whatsapp.dto.MessageReader;
 import ao.it.chandsoft.whatsapp.dto.WhatsAppResponse;
 import ao.it.chandsoft.whatsapp.enums.FileType;
 import ao.it.chandsoft.whatsapp.exception.MediaFileException;
@@ -31,6 +32,11 @@ public class WhatsAppServiceImpl implements WhatsAppService {
     public WhatsAppResponse send(String channelId, Message message) {
         String response = whatsAppClient.sendMessage(channelId, message.toJson());
         return whatsAppResponse(response);
+    }
+
+    @Override
+    public void markAsRead(String channelId, MessageReader messageReader) {
+        whatsAppClient.markAsRead(channelId, messageReader.toJson());
     }
 
     private WhatsAppResponse whatsAppResponse(String jsonResponse) {

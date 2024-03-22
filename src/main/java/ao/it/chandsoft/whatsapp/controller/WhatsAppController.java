@@ -5,6 +5,7 @@ import ao.it.chandsoft.whatsapp.service.WhatsAppService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,13 @@ public class WhatsAppController {
     @PostMapping(value = "/{channelId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Object upload(@PathVariable String channelId,  @RequestParam("file") MultipartFile file) {
         return whatsAppService.upload(channelId, file);
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(method = "PUT", summary = "Mark a message as read")
+    @PutMapping("/{channelId}/message")
+    public void markAsRead(@Validated @RequestBody MessageReader messageReader, @PathVariable String channelId) {
+        whatsAppService.markAsRead(channelId, messageReader);
     }
 
     @Operation(method = "POST", summary = "Send text message")

@@ -21,7 +21,7 @@ public record InteractiveList(String phonenumber, String header, String body, St
                                     {
                                         "id": "_ID_",
                                         "title": "_TITLE_",
-                                        "description": "_DESCRIPTION_"
+                                        "description": _DESCRIPTION_
                                     }
             """;
     public static final String JSON = """
@@ -39,9 +39,7 @@ public record InteractiveList(String phonenumber, String header, String body, St
                         "body": {
                             "text": "_BODY_TEXT_"
                         },
-                        "footer": {
-                            "text": "_FOOTER_TEXT_"
-                        },
+                        "footer": _FOOTER_TEXT_,
                         "action": {
                             "button": "_BUTTON_",
                             "sections": [
@@ -57,7 +55,7 @@ public record InteractiveList(String phonenumber, String header, String body, St
         return JSON.replace("_TO_", phonenumber)
                 .replace("_HEADER_TEXT_", toNonNullValue(header))
                 .replace("_BODY_TEXT_", body)
-                .replace("_FOOTER_TEXT_", toNonNullValue(footer))
+                .replace("_FOOTER_TEXT_", translateFooter(footer))
                 .replace("_BUTTON_", button)
                 .replace("_SECTIONS_", sectionsToJson())
                 ;
@@ -67,16 +65,28 @@ public record InteractiveList(String phonenumber, String header, String body, St
         return sections.stream().limit(10).map(section -> {
             String rows = section.rows.stream().map(row -> ROW_TO_JSON.replace("_ID_", row.id)
                     .replace("_TITLE_", row.title)
-                    .replace("_DESCRIPTION_", row.description)
+                    .replace("_DESCRIPTION_", toNonNullValue3(row.description))
             ).collect(Collectors.joining(",\n"));
 
-            return SECTION_TO_JSON.replace("_TITLE_", toNonNullValue(section.title))
+            return SECTION_TO_JSON.replace("_TITLE_", toNonNullValue3(section.title))
                     .replace("_ROWS_", rows);
         }).collect(Collectors.joining(",\n"));
     }
 
     public String toNonNullValue(String value) {
         return value != null && !value.isBlank()? value: "";
+    }
+
+    public String toNonNullValue2(String value) {
+        return value != null && !value.isBlank()? "\"" + value + "\"": "";
+    }
+
+    public String toNonNullValue3(String value) {
+        return value != null && !value.isBlank()? "\"" + value + "\"": "null";
+    }
+
+    public String translateFooter(String value) {
+        return value != null && !value.isBlank()? "{\"text\": \"" + value+ "\"}": "null";
     }
 
 }

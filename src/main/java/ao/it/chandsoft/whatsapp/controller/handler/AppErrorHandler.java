@@ -73,8 +73,6 @@ public class AppErrorHandler {
         if(!ex.contentUTF8().isBlank()) {
             errorResponse = objectMapper.readValue(ex.contentUTF8(), WhatsAppErrorResponse.class);
             message = errorResponse.error().message();
-            /*message = errorResponse.error().errorData().details().isBlank()? errorResponse.error().message():
-                    errorResponse.error().errorData().details();*/
         }
 
         ExceptionResponse exceptionResponse =  switch (ex.status()) {
